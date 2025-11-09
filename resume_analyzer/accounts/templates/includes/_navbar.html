@@ -1,0 +1,19 @@
+{% load static %}
+<nav class="bg-white shadow-md">
+  <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+    <a href="{% url 'dashboard' %}" class="flex items-center gap-2">
+      <img src="{% static 'accounts/images/logo.svg' %}" alt="Logo" class="h-8">
+      <span class="text-lg font-semibold text-indigo-600">ResumeMatchr</span>
+    </a>
+    <div class="flex gap-4">
+      {% if user.is_authenticated %}
+        <a href="{% url 'upload_resume' %}" class="hover:text-indigo-600">Upload Resume</a>
+        <a href="{% url 'dashboard' %}" class="hover:text-indigo-600">Profile</a>
+        <a href="{% url 'logout' %}" class="text-red-500 hover:underline">Logout</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="hover:text-indigo-600">Login</a>
+        <a href="{% url 'register' %}" class="bg-indigo-600 text-white px-3 py-1 rounded-md hover:bg-indigo-500">Sign Up</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
