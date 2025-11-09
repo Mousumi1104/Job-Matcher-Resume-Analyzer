@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Resumes{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto mt-10">
+  <h1 class="text-2xl font-bold mb-6 text-gray-800">📄 My Uploaded Resumes</h1>
+
+  <div class="bg-white shadow rounded-lg overflow-hidden">
+    <table class="min-w-full table-auto border-collapse">
+      <thead class="bg-gray-100 text-gray-700 text-sm uppercase font-semibold">
+        <tr>
+          <th class="px-6 py-3 text-left">File Name</th>
+          <th class="px-6 py-3 text-left">Status</th>
+          <th class="px-6 py-3 text-left">Uploaded At</th>
+          <th class="px-6 py-3 text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-600">
+        {% for resume in resumes %}
+        <tr class="border-t hover:bg-gray-50 transition">
+          <td class="px-6 py-4 font-medium">{{ resume.file.name|slice:'15:' }}</td>
+          <td class="px-6 py-4">
+           
+            {% if resume.status == '0' or resume.status == '1' %}
+              <span class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded-full">Processing</span>
+            {% elif resume.status == '2' %}
+              <span class="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">Done</span>
+            {% elif resume.status == '5' %}
+              <span class="bg-red-100 text-red-800 text-xs font-semibold px-2 py-1 rounded-full">Failed</span>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4 text-sm">{{ resume.created_at|date:"d M, Y H:i" }}</td>
+          <td class="px-6 py-4 text-center">
+            {% if resume.status == '2' %}
+              <a href="{% url 'resume_detail' resume.id %}" class="text-indigo-600 hover:text-indigo-800 font-semibold">View Details </a>
+          |
+              <a href="{% url 'delete_resume' resume.id %}" class="text-red-600 hover:text-red-800 font-semibold">Delete</a>
+            {% else %}
+              <span class="text-gray-400 text-sm italic">Not available</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="px-6 py-6 text-center text-gray-500">
+            No resumes uploaded yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
