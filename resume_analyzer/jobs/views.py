@@ -12,8 +12,11 @@ from google import genai
 import re, json,  asyncio, aiohttp
 from asgiref.sync import sync_to_async
 from django.db.models import Exists, OuterRef, Value, BooleanField
+from django.conf import settings
 
-client = genai.Client(api_key="REMOVED_SECRET")
+client = genai.Client(api_key=settings.GOOGLE_API_KEY)
+
+
 
 # Create your views here.
 
@@ -64,7 +67,7 @@ async def fetch_jobs_for_tag(session, tag):
     encoded_tag = urllib.parse.quote_plus(tag)
     url = f"https://jsearch.p.rapidapi.com/search?query={encoded_tag}&country=in&date_posted=month"
     headers = {
-        'x-rapidapi-key': "REMOVED_SECRET",
+        'x-rapidapi-key': settings.J_SEARCH_KEY,
         'x-rapidapi-host': "jsearch.p.rapidapi.com"
     }
 

@@ -170,3 +170,4 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_TIMEZONE = "Asia/Kolkata"
 
 GOOGLE_API_KEY = config('GOOGLE_API_KEY')
+J_SEARCH_KEY = config('J_SEARCH_KEY')
