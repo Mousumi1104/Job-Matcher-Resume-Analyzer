@@ -7,10 +7,11 @@ from django.utils import timezone
 import  docx, re, spacy, json, os, fitz
 from google import genai
 from decouple import config
+from django.conf import settings
 
 # Load NLP model (only once)
 nlp = spacy.load("en_core_web_sm")
-client = genai.Client(api_key="AIzaSyAd4rplAifue8VyRpz6NGoqmcHMIXFEKtw")
+client = genai.Client(api_key=settings.GOOGLE_API_KEY)
 TOP_N = 10
 THRESHOLD_PCT = 10.0 
 
