@@ -1,0 +1,11 @@
+# Tell GitHub to ignore static files in language stats
+static/* linguist-vendored
+media/* linguist-vendored
+templates/* linguist-vendored
+
+# Optional: if you have frontend in subfolder
+frontend/* linguist-vendored
+
+# Ignore JS/CSS libraries
+*.min.js linguist-vendored
+*.min.css linguist-vendored
