@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ResumeMatchr{% endblock %}</title>
+   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="{% static 'accounts/css/main.css' %}" rel="stylesheet">
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+  {% include 'includes/_navbar.html' %}
+
+  <main class="container mx-auto px-4 py-8 min-h-[80vh]">
+      {% include 'includes/_flash_messages.html' %}
+      {% block content %}{% endblock %}
+  </main>
+
+  {% include 'includes/_footer.html' %}
+  <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>
