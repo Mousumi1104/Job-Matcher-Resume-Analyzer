@@ -28,7 +28,8 @@ def resumes_list(request):
 @login_required
 def resume_detail(request,resume_id):
 
-    resume = get_object_or_404(Resume, id=resume_id)
+    # Scope to the owner: other users' resume ids return 404 (prevents IDOR)
+    resume = get_object_or_404(Resume, id=resume_id, user_id=request.user)
     
     # Get related parsed_data entry for this resume
     parsed_resume = parsed_data.objects.filter(resume_id=resume).first()
@@ -41,5 +42,5 @@ def resume_detail(request,resume_id):
 
 @login_required
 def delete_resume(request, id):
-    Resume.objects.filter(id=id).update(status='7')
+    Resume.objects.filter(id=id, user_id=request.user).update(status='7')
     return redirect('resumes_list')

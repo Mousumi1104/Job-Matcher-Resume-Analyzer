@@ -7,6 +7,7 @@ from matching.models import MatchResult
 from django.contrib.auth import get_user_model
 from .utils import build_job_corpus, resume_to_text, compute_tfidf_scores, compute_skill_overlap, combine_scores, safe_load_skills, extract_numeric_experience
 from django.db import transaction
+from django.contrib.auth.decorators import user_passes_test
 import math
 
 TOP_N = 10
@@ -37,6 +38,7 @@ def normalize_skills(skills_or_text):
     return list(set(filter(None, cleaned)))
 
 
+@user_passes_test(lambda u: u.is_authenticated and getattr(u, 'is_admin', False))
 def compute_matches_for_resume(request):
     """
     Compute top-N matches for a single parsed_data instance (resume).
@@ -50,10 +52,10 @@ def compute_matches_for_resume(request):
     # Fetch candidate jobs (all or filtered). To optimize, filter by date or tag if available:
     # If parsed.tag exists, narrow by job title containing tag for relevancy
     for p in parsed:
-        if getattr(p, 'tag', None):
-            jobs_qs = JobListing.objects.filter(title__icontains=p.tag)
-        else:
-            jobs_qs = JobListing.objects.all()
+        # if getattr(p, 'tag', None):
+        #     jobs_qs = JobListing.objects.filter(title__icontains=p.tag)
+        # else:
+        jobs_qs = JobListing.objects.all()
 
         # Preload into memory (could be chunked for large DBs)
         job_list = list(jobs_qs)
@@ -67,7 +69,7 @@ def compute_matches_for_resume(request):
         # compute combined scores
         resume_skills = safe_load_skills(p.skills)
         print(resume_skills)
-        resume_exp = p.experience_years
+        resume_exp = p.experience_years or 0.0
         
         scored = []
         for idx, job in enumerate(job_list):
@@ -88,7 +90,7 @@ def compute_matches_for_resume(request):
             scored.append((job, job_skills, job_exp, score_pct, tfidf_score, overlap))
 
         # pick top N by score_pct
-        scored_sorted = sorted(scored, key=lambda x: x[1], reverse=True)[:TOP_N]
+        scored_sorted = sorted(scored, key=lambda x: x[3], reverse=True)[:TOP_N]  # x[3] = score_pct
 
         results = []
         for job, job_skills, job_exp, score_pct, tfidf_score, overlap in scored_sorted:

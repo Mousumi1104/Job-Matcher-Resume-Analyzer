@@ -4,13 +4,11 @@ from jobs.models import JobListing
 from matching.models import MatchResult, SavedJobs
 from matching.utils import *
 from django.utils import timezone
-import  docx, re, spacy, json, os, fitz
+import  docx, re, json, os, fitz
 from google import genai
 from decouple import config
 from django.conf import settings
 
-# Load NLP model (only once)
-nlp = spacy.load("en_core_web_sm")
 client = genai.Client(api_key=settings.GOOGLE_API_KEY)
 TOP_N = 10
 THRESHOLD_PCT = 10.0 
@@ -112,7 +110,7 @@ def parse_resume_with_gemini(cleaned_text: str):
         print("⚠️ Gemini parsing failed:", e)
         return None
 
-def compute_matches_for_resume(resume_id):
+def compute_matches_for_single_resume(resume_id):
     """
     Compute top-N matches for a single parsed_data instance (resume).
     Saves MatchResult entries for those >= THRESHOLD_PCT.
@@ -142,7 +140,7 @@ def compute_matches_for_resume(resume_id):
         # compute combined scores
         resume_skills = safe_load_skills(p.skills)
         print(resume_skills)
-        resume_exp = p.experience_years
+        resume_exp = p.experience_years or 0.0
         
         scored = []
         for idx, job in enumerate(job_list):
@@ -163,7 +161,7 @@ def compute_matches_for_resume(resume_id):
             scored.append((job, job_skills, job_exp, score_pct, tfidf_score, overlap))
 
         # pick top N by score_pct
-        scored_sorted = sorted(scored, key=lambda x: x[1], reverse=True)[:TOP_N]
+        scored_sorted = sorted(scored, key=lambda x: x[3], reverse=True)[:TOP_N]  # x[3] = score_pct
 
         results = []
         for job, job_skills, job_exp, score_pct, tfidf_score, overlap in scored_sorted:
@@ -237,7 +235,7 @@ def parse_resume_task(resume_id):
         if not any(word in text.lower() for word in ['experience', 'education', 'skills', 'projects', 'resume']):
             resume.status = '5'  # Not a resume
             resume.save()
-            print("⚠️ Parsing failed:", e)
+            print(f"⚠️ Resume {resume_id} does not look like a resume, skipping.")
             return
 
         structured = parse_resume_with_gemini(text)
@@ -268,34 +266,41 @@ def parse_resume_task(resume_id):
         phones = structured.get("phones", [])
         skills = structured.get("skills", [])
         education = structured.get("education", [])
-        experience = structured.get("experience_years", [])
+        try:
+            experience = float(structured.get("experience_years") or 0)
+        except (TypeError, ValueError):
+            experience = None
         summary = structured.get("summary", "")
         keywords = structured.get("keywords", "")
         tag = structured.get("tag", "")
 
         # 6️⃣ Save parsed data
-        parsed_data.objects.create(
+        # update_or_create keeps the task idempotent: a retry or a duplicate
+        # delivery updates the existing row instead of violating the OneToOne key.
+        parsed_data.objects.update_or_create(
             resume_id=resume,
-            fullname=fullname,
-            emails=emails,
-            phones=phones,
-            skills=skills,
-            education=education,
-            experience_years=experience,
-            summary_text=summary,
-            keywords=keywords,
-            tag = tag,
-            created_at=timezone.now(),
+            defaults={
+                "fullname": fullname,
+                "emails": emails,
+                "phones": phones,
+                "skills": skills,
+                "education": education,
+                "experience_years": experience,
+                "summary_text": summary,
+                "keywords": keywords,
+                "tag": tag,
+                "created_at": timezone.now(),
+            },
         )
 
         # 7️⃣ Update resume record
         resume.extracted_text = text
         resume.status = "2"
         resume.save()
-        compute_matches_for_resume(resume.id)
+        compute_matches_for_single_resume(resume.id)
 
 
-        print(f"✅ Resume {resume_id} parsed successfully using Llama3.")
+        print(f"✅ Resume {resume_id} parsed successfully using Gemini.")
 
     except Exception as e:
         resume.status = '5'  # Failed
